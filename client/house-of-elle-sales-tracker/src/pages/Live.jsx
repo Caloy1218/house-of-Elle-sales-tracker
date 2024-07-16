@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Container, Paper, Grid } from '@mui/material';
+import { TextField, Button, Container, Paper, Grid, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import { Edit, Delete, ShoppingCart } from '@mui/icons-material';
-import { db } from '../firebase';
+import { db,writeBatch  } from '../firebase';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
- // Add deleteDoc import
-
 
 const Live = () => {
   const [form, setForm] = useState({ code: '', minerName: '', price: '' });
   const [rows, setRows] = useState([]);
   const [totalCheckedOut, setTotalCheckedOut] = useState(0);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,23 +56,42 @@ const Live = () => {
       await updateDoc(doc(db, 'liveData', id), updatedRow);
       setRows((prevRows) => prevRows.map((r) => (r.id === id ? updatedRow : r)));
       setTotalCheckedOut((prevTotal) => prevTotal + row.price);
-  
-      // Ensure the totalSales document exists or create it
+
+      // Add to totalSales collection
+      await addDoc(collection(db, 'totalSales'), {
+        code: row.code,
+        minerName: row.minerName,
+        price: row.price,
+        date: new Date(),
+      });
+
+      // Ensure the totalSales summary document exists or create it
       const summaryDocRef = doc(db, 'totalSales', 'summary');
       const summaryDoc = await getDoc(summaryDocRef);
-  
+
       if (summaryDoc.exists()) {
-        await updateDoc(summaryDocRef, { totalSales: totalCheckedOut + row.price });
+        await updateDoc(summaryDocRef, { totalSales: summaryDoc.data().totalSales + row.price });
       } else {
-        await setDoc(summaryDocRef, { totalSales: totalCheckedOut + row.price });
+        await setDoc(summaryDocRef, { totalSales: row.price });
       }
     }
   };
-  
 
   const calculateTotalCheckedOut = (data) => {
     const total = data.filter((item) => item.checkedOut).reduce((acc, item) => acc + item.price, 0);
     setTotalCheckedOut(total);
+  };
+
+  const handleClearAll = async () => {
+    const querySnapshot = await getDocs(collection(db, 'liveData'));
+    const batch = writeBatch(db); // Create a batch instance
+    querySnapshot.forEach((doc) => {
+      batch.delete(doc.ref); // Queue delete operations
+    });
+    await batch.commit(); // Commit the batch
+    setRows([]);
+    setTotalCheckedOut(0);
+    setClearDialogOpen(false);
   };
 
   const columns = [
@@ -138,6 +156,17 @@ const Live = () => {
               Enter
             </Button>
           </Grid>
+          <Grid item xs={12} sm={3}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setClearDialogOpen(true)}
+              fullWidth
+              style={{ height: '100%' }}
+            >
+              Clear
+            </Button>
+          </Grid>
         </Grid>
       </Paper>
 
@@ -163,6 +192,26 @@ const Live = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      <Dialog
+        open={clearDialogOpen}
+        onClose={() => setClearDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Clear All</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to clear all the data? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClearDialogOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleClearAll} color="secondary">
+            Clear All
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
