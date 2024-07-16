@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Container, Paper, Grid, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
-import { Edit, Delete, ShoppingCart } from '@mui/icons-material';
-import { db,writeBatch  } from '../firebase';
+import { Edit, Delete, ShoppingCart, Clear } from '@mui/icons-material';
+import { db, writeBatch } from '../firebase';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 
 const Live = () => {
@@ -77,11 +77,6 @@ const Live = () => {
     }
   };
 
-  const calculateTotalCheckedOut = (data) => {
-    const total = data.filter((item) => item.checkedOut).reduce((acc, item) => acc + item.price, 0);
-    setTotalCheckedOut(total);
-  };
-
   const handleClearAll = async () => {
     const querySnapshot = await getDocs(collection(db, 'liveData'));
     const batch = writeBatch(db); // Create a batch instance
@@ -90,8 +85,13 @@ const Live = () => {
     });
     await batch.commit(); // Commit the batch
     setRows([]);
-    setTotalCheckedOut(0);
+    setTotalCheckedOut(0); // Reset the totalCheckedOut
     setClearDialogOpen(false);
+  };
+
+  const calculateTotalCheckedOut = (data) => {
+    const total = data.filter((item) => item.checkedOut).reduce((acc, item) => acc + item.price, 0);
+    setTotalCheckedOut(total);
   };
 
   const columns = [
@@ -104,9 +104,22 @@ const Live = () => {
       type: 'actions',
       width: 150,
       getActions: (params) => [
-        <GridActionsCellItem icon={<Edit />} label="Edit" onClick={() => handleEdit(params.id)} />,
-        <GridActionsCellItem icon={<Delete />} label="Delete" onClick={() => handleDelete(params.id)} />,
-        <GridActionsCellItem icon={<ShoppingCart />} label="Checkout" onClick={() => handleCheckout(params.id)} disabled={params.row.checkedOut} />,
+        <GridActionsCellItem 
+          icon={<Edit style={{ color: '#28a745' }} />} 
+          label="Edit" 
+          onClick={() => handleEdit(params.id)} 
+        />,
+        <GridActionsCellItem 
+          icon={<Delete style={{ color: '#dc3545' }} />} 
+          label="Delete" 
+          onClick={() => handleDelete(params.id)} 
+        />,
+        <GridActionsCellItem 
+          icon={<ShoppingCart style={{ color: params.row.checkedOut ? '#6c757d' : '#007bff' }} />} 
+          label="Checkout" 
+          onClick={() => handleCheckout(params.id)} 
+          disabled={params.row.checkedOut} 
+        />,
       ],
     },
   ];
@@ -156,23 +169,26 @@ const Live = () => {
               Enter
             </Button>
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => setClearDialogOpen(true)}
-              fullWidth
-              style={{ height: '100%' }}
-            >
-              Clear
-            </Button>
-          </Grid>
         </Grid>
       </Paper>
 
       <div style={{ height: 400, width: '100%', marginTop: 16 }}>
         <DataGrid rows={rows} columns={columns} pageSize={5} />
       </div>
+
+      <Grid container spacing={2} justifyContent="flex-end" style={{ marginTop: 16 }}>
+        <Grid item>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => setClearDialogOpen(true)}
+            style={{ backgroundColor: '#dc3545', color: '#ffffff' }}
+            startIcon={<Clear />}
+          >
+            Clear All
+          </Button>
+        </Grid>
+      </Grid>
 
       <Paper style={{ padding: 16, marginTop: 16 }}>
         <Grid container justifyContent="space-between">
@@ -183,14 +199,16 @@ const Live = () => {
             <strong>${subtotal.toFixed(2)}</strong>
           </Grid>
         </Grid>
-        <Grid container justifyContent="space-between">
-          <Grid item>
-            <strong>Total:</strong>
+        {rows.length > 0 && (
+          <Grid container justifyContent="space-between">
+            <Grid item>
+              <strong>Total:</strong>
+            </Grid>
+            <Grid item>
+              <strong>${totalCheckedOut.toFixed(2)}</strong>
+            </Grid>
           </Grid>
-          <Grid item>
-            <strong>${totalCheckedOut.toFixed(2)}</strong>
-          </Grid>
-        </Grid>
+        )}
       </Paper>
 
       <Dialog
