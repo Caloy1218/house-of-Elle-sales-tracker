@@ -1,29 +1,52 @@
-import React, { useState } from 'react';
-import { auth, db } from '../firebase';
+import React, { useState, useEffect } from 'react';
+import { auth, db } from '../firebase'; // Changed 'firestore' to 'db'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc } from 'firebase/firestore';
-import {
-  Container,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Link
-} from '@mui/material';
+import { Container, Paper, Typography, TextField, Button, Link } from '@mui/material';
+import { useAuth } from '../AuthContext';
+import { collection, query, getDocs, addDoc, getCountFromServer } from 'firebase/firestore';
 
 const Sales = () => {
-  const [user, setUser] = useState(null);
+  const { user, setUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(true); // Flag to toggle between sign-up and login
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(true);
   const [error, setError] = useState('');
+  const [isSignupDisabled, setIsSignupDisabled] = useState(false);
+
+  useEffect(() => {
+    const checkSignUpLimit = async () => {
+      try {
+        const usersRef = collection(db, 'users'); // Changed 'firestore' to 'db'
+        const q = query(usersRef);
+        const querySnapshot = await getCountFromServer(q);
+        if (querySnapshot.data().count >= 2) {
+          setIsSignupDisabled(true);
+        } else {
+          setIsSignupDisabled(false);
+        }
+      } catch (err) {
+        console.error("Error checking sign-up limit: ", err);
+      }
+    };
+
+    checkSignUpLimit();
+  }, []);
 
   const handleSignUp = async () => {
     setError('');
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await addDoc(collection(db, 'users'), { // Changed 'firestore' to 'db'
+        uid: userCredential.user.uid,
+        email: userCredential.user.email
+      });
       setUser(userCredential.user);
+      setIsSignUp(false);
     } catch (error) {
       console.error("Sign Up Error: ", error);
       setError(`Sign-up failed: ${error.message}`);
@@ -38,20 +61,6 @@ const Sales = () => {
     } catch (error) {
       console.error("Login Error: ", error);
       setError(`Login failed: ${error.message}`);
-    }
-  };
-
-  const handleSaveData = async () => {
-    setError('');
-    try {
-      await addDoc(collection(db, 'sales'), {
-        userId: user.uid,
-        data: 'Sample Data'
-      });
-      alert('Data saved successfully!');
-    } catch (error) {
-      console.error("Data Save Error: ", error);
-      setError(`Data save failed: ${error.message}`);
     }
   };
 
@@ -80,12 +89,23 @@ const Sales = () => {
               fullWidth
               margin="normal"
             />
+            {isSignUp && (
+              <TextField
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+            )}
             <Button
               variant="contained"
               color="primary"
               fullWidth
               onClick={isSignUp ? handleSignUp : handleLogin}
               style={{ marginTop: '16px' }}
+              disabled={isSignUp && isSignupDisabled} // Disable button if sign-up limit is reached
             >
               {isSignUp ? 'Sign Up' : 'Login'}
             </Button>
@@ -100,22 +120,7 @@ const Sales = () => {
               </Link>
             </Typography>
           </div>
-        ) : (
-          <div>
-            <Typography variant="h4" component="h2" gutterBottom>
-              Sales Page
-            </Typography>
-            {error && <Typography color="error">{error}</Typography>}
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSaveData}
-              style={{ marginTop: '16px' }}
-            >
-              Save Data
-            </Button>
-          </div>
-        )}
+        ) : null}
       </Paper>
     </Container>
   );
