@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
+import './pages/CSS/Header.css';
 
 const Header = () => {
   const { user, setUser } = useAuth();
@@ -67,15 +68,15 @@ const Header = () => {
   );
 
   return (
-    <AppBar position="static" sx={{backgroundColor: '#ed297b'}}>
-      <Toolbar>
+    <AppBar position="static" sx={{ backgroundColor: '#ed297b' }}>
+      <Toolbar className='header-container'>
         {isMobile && (
           <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)} sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
         )}
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          House of Elle Live Tracker
+        <Typography variant="h6" sx={{ flexGrow: 1, textAlign: isMobile ? 'right' : 'left' }} className='header-title'>
+          House of Elle
         </Typography>
         <Box sx={{ display: isMobile ? 'none' : 'flex', alignItems: 'center' }}>
           <Button color="inherit" component={Link} to="/">Home</Button>

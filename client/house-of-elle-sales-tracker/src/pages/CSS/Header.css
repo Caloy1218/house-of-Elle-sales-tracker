@@ -1,0 +1,15 @@
+.header-logo img{
+    width: 200px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+}
+@media (max-width: 768px) {
+    header-container{
+        display: flex;
+        justify-content: flex-end;
+    }
+    .header-logo{
+      justify-content: flex-end;
+    }
+  }
