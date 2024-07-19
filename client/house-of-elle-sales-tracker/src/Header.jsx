@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, IconButton, Box, Avatar, Menu, MenuItem } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, IconButton, Box, Avatar, Menu, MenuItem, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
@@ -9,6 +9,9 @@ import { auth } from './firebase';
 const Header = () => {
   const { user, setUser } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleAvatarClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -24,16 +27,57 @@ const Header = () => {
     handleClose();
   };
 
+  const toggleDrawer = (open) => (event) => {
+    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
+
+  const drawer = (
+    <Box
+      sx={{ width: 250 }}
+      role="presentation"
+      onClick={toggleDrawer(false)}
+      onKeyDown={toggleDrawer(false)}
+    >
+      <List>
+        <ListItem button component={Link} to="/">
+          <ListItemText primary="Home" />
+        </ListItem>
+        <ListItem button component={Link} to="/live">
+          <ListItemText primary="Live" />
+        </ListItem>
+        {user && (
+          <ListItem button component={Link} to="/totalsales">
+            <ListItemText primary="Total Sales" />
+          </ListItem>
+        )}
+        {user ? (
+          <ListItem button onClick={handleLogout}>
+            <ListItemText primary="Logout" />
+          </ListItem>
+        ) : (
+          <ListItem button component={Link} to="/sales">
+            <ListItemText primary="Sign Up" />
+          </ListItem>
+        )}
+      </List>
+    </Box>
+  );
+
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{backgroundColor: '#ed297b'}}>
       <Toolbar>
-        <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
-          <MenuIcon />
-        </IconButton>
+        {isMobile && (
+          <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)} sx={{ mr: 2 }}>
+            <MenuIcon />
+          </IconButton>
+        )}
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          React App
+          House of Elle Live Tracker
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: isMobile ? 'none' : 'flex', alignItems: 'center' }}>
           <Button color="inherit" component={Link} to="/">Home</Button>
           <Button color="inherit" component={Link} to="/live">Live</Button>
           {user && (
@@ -65,6 +109,13 @@ const Header = () => {
           {!user && <Button color="inherit" component={Link} to="/sales">Sign Up</Button>}
         </Box>
       </Toolbar>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+      >
+        {drawer}
+      </Drawer>
     </AppBar>
   );
 };
