@@ -4,7 +4,7 @@ import hoeBanner from './Assets/HOE_banner.png';
 import './CSS/Home.css';
 const Home = () => {
     return <div className="home-container">
-    <img src={hoeBanner} alt="" />
+    
     </div>
 };
 

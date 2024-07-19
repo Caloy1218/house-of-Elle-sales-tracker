@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase'; // Changed 'firestore' to 'db'
+import { useNavigate } from 'react-router-dom';
+import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { Container, Paper, Typography, TextField, Button, Link } from '@mui/material';
 import { useAuth } from '../AuthContext';
-import { collection, query, getDocs, addDoc, getCountFromServer } from 'firebase/firestore';
+import { collection, query, getCountFromServer, addDoc } from 'firebase/firestore';
 
 const Sales = () => {
   const { user, setUser } = useAuth();
@@ -13,11 +14,12 @@ const Sales = () => {
   const [isSignUp, setIsSignUp] = useState(true);
   const [error, setError] = useState('');
   const [isSignupDisabled, setIsSignupDisabled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkSignUpLimit = async () => {
       try {
-        const usersRef = collection(db, 'users'); // Changed 'firestore' to 'db'
+        const usersRef = collection(db, 'users');
         const q = query(usersRef);
         const querySnapshot = await getCountFromServer(q);
         if (querySnapshot.data().count >= 2) {
@@ -33,6 +35,12 @@ const Sales = () => {
     checkSignUpLimit();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      navigate('/totalsales');
+    }
+  }, [user, navigate]);
+
   const handleSignUp = async () => {
     setError('');
     if (password !== confirmPassword) {
@@ -41,12 +49,11 @@ const Sales = () => {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await addDoc(collection(db, 'users'), { // Changed 'firestore' to 'db'
+      await addDoc(collection(db, 'users'), {
         uid: userCredential.user.uid,
         email: userCredential.user.email
       });
       setUser(userCredential.user);
-      setIsSignUp(false);
     } catch (error) {
       console.error("Sign Up Error: ", error);
       setError(`Sign-up failed: ${error.message}`);
@@ -105,7 +112,7 @@ const Sales = () => {
               fullWidth
               onClick={isSignUp ? handleSignUp : handleLogin}
               style={{ marginTop: '16px' }}
-              disabled={isSignUp && isSignupDisabled} // Disable button if sign-up limit is reached
+              disabled={isSignUp && isSignupDisabled}
             >
               {isSignUp ? 'Sign Up' : 'Login'}
             </Button>

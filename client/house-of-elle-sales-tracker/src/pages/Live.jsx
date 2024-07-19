@@ -165,6 +165,7 @@ const Live = () => {
               onClick={handleEnter}
               fullWidth
               style={{ height: '100%' }}
+              sx={{backgroundColor: '#ed297b'}}
             >
               Enter
             </Button>
