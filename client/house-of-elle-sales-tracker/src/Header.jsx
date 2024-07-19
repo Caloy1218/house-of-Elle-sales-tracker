@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, IconButton, Box, Avatar, Menu, MenuItem, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
@@ -13,6 +13,7 @@ const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
 
   const handleAvatarClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -25,6 +26,7 @@ const Header = () => {
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
+    navigate('/sales');  // Redirect to the sales page after logout
     handleClose();
   };
 
