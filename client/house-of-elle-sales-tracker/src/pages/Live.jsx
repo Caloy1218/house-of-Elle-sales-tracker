@@ -72,7 +72,7 @@ const Live = () => {
         code: row.code,
         minerName: row.minerName,
         price: row.price,
-        seller: row.seller,
+        seller: row.seller || 'Unknown',
         date: new Date(),
       });
 
@@ -226,47 +226,51 @@ const Live = () => {
         <DataGrid rows={rows} columns={columns} pageSize={5} />
       </div>
 
-      <Grid container spacing={2} justifyContent="flex-end" style={{ marginTop: 16 }}>
-        <Grid item>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => setClearDialogOpen(true)}
-            style={{ backgroundColor: '#dc3545', color: '#ffffff' }}
-            startIcon={<Clear />}
-          >
-            Clear All
-          </Button>
+      <Grid container spacing={2} style={{ marginTop: 16 }}>
+        <Grid item xs={12} sm={6}>
+          <Paper style={{ padding: 16 }}>
+            <strong>Subtotal:</strong> ₱{subtotal.toFixed(2)}
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Paper style={{ padding: 16 }}>
+            <strong>Total Checked Out:</strong> ₱{totalCheckedOut.toFixed(2)}
+          </Paper>
         </Grid>
       </Grid>
 
-      <Dialog open={clearDialogOpen} onClose={() => setClearDialogOpen(false)}>
-        <DialogTitle>Clear All Items</DialogTitle>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => setClearDialogOpen(true)}
+        fullWidth
+        style={{ marginTop: 16 }}
+        startIcon={<Clear />}
+      >
+        Clear All
+      </Button>
+
+      <Dialog
+        open={clearDialogOpen}
+        onClose={() => setClearDialogOpen(false)}
+        aria-labelledby="clear-all-dialog-title"
+        aria-describedby="clear-all-dialog-description"
+      >
+        <DialogTitle id="clear-all-dialog-title">Confirm Clear All</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to clear all items? This action cannot be undone.
+          <DialogContentText id="clear-all-dialog-description">
+            Are you sure you want to clear all entries? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setClearDialogOpen(false)} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleClearAll} color="secondary" style={{ color: '#ffffff', backgroundColor: '#dc3545' }}>
+          <Button onClick={handleClearAll} color="secondary">
             Clear All
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Paper style={{ padding: 16, marginTop: 16 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            <div>Subtotal: ${subtotal.toFixed(2)}</div>
-          </Grid>
-          <Grid item xs={6}>
-            <div>Total Checked Out: ${totalCheckedOut.toFixed(2)}</div>
-          </Grid>
-        </Grid>
-      </Paper>
     </Container>
   );
 };
