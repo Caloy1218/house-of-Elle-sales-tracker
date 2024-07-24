@@ -11,7 +11,7 @@ const Live = () => {
   const [totalCheckedOut, setTotalCheckedOut] = useState(0);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [sellerName, setSellerName] = useState('');
-  const [isTakeOverDisabled, setIsTakeOverDisabled] = useState(true); // State for button disabled
+  const [isSellerSet, setIsSellerSet] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,9 +25,12 @@ const Live = () => {
   }, []);
 
   useEffect(() => {
-    // Disable the "Take Over" button if sellerName is empty
-    setIsTakeOverDisabled(sellerName.trim() === '');
-  }, [sellerName]);
+    const savedSellerName = localStorage.getItem('sellerName');
+    if (savedSellerName) {
+      setSellerName(savedSellerName);
+      setIsSellerSet(true);
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -102,10 +105,16 @@ const Live = () => {
     setTotalCheckedOut(total);
   };
 
-  const handleSellerTakeover = () => {
-    setRows((prevRows) =>
-      prevRows.map((row) => ({ ...row, seller: sellerName }))
-    );
+  const handleSellerEnter = () => {
+    setIsSellerSet((prevIsSellerSet) => {
+      if (prevIsSellerSet) {
+        setSellerName('');
+        localStorage.removeItem('sellerName');
+      } else {
+        localStorage.setItem('sellerName', sellerName);
+      }
+      return !prevIsSellerSet;
+    });
   };
 
   const columns = [
@@ -143,6 +152,31 @@ const Live = () => {
 
   return (
     <Container>
+      <Paper style={{ padding: 16, marginTop: 16 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={8}>
+            <TextField
+              label="Seller Name"
+              value={sellerName}
+              onChange={(e) => setSellerName(e.target.value)}
+              fullWidth
+              disabled={isSellerSet} // Disable input when seller is set
+            />
+          </Grid>
+          <Grid item xs={4}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSellerEnter}
+              fullWidth
+              style={{ height: '100%' }}
+              sx={{ backgroundColor: isSellerSet ? '#4caf50' : '#007bff' }}
+            >
+              {isSellerSet ? 'Change Seller' : 'Set'}
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
       <Paper style={{ padding: 16, marginTop: 16 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={3}>
@@ -188,32 +222,6 @@ const Live = () => {
         </Grid>
       </Paper>
 
-      <Paper style={{ padding: 16, marginTop: 16 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={8}>
-            <TextField
-              label="Seller Name"
-              value={sellerName}
-              onChange={(e) => setSellerName(e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={4}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSellerTakeover}
-              fullWidth
-              style={{ height: '100%' }}
-              sx={{ backgroundColor: '#4caf50' }}
-              disabled={isTakeOverDisabled} // Disable button based on condition
-            >
-              Take Over
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-
       <div style={{ height: 400, width: '100%', marginTop: 16 }}>
         <DataGrid rows={rows} columns={columns} pageSize={5} />
       </div>
@@ -232,19 +240,8 @@ const Live = () => {
         </Grid>
       </Grid>
 
-      <Paper style={{ padding: 16, marginTop: 16 }}>
-        <Grid container justifyContent="space-between">
-          <Grid item>
-            <strong>Subtotal:</strong> ${subtotal.toFixed(2)}
-          </Grid>
-          <Grid item>
-            <strong>Total Checked Out:</strong> ${totalCheckedOut.toFixed(2)}
-          </Grid>
-        </Grid>
-      </Paper>
-
       <Dialog open={clearDialogOpen} onClose={() => setClearDialogOpen(false)}>
-        <DialogTitle>Confirm Clear All</DialogTitle>
+        <DialogTitle>Clear All Items</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to clear all items? This action cannot be undone.
@@ -254,11 +251,22 @@ const Live = () => {
           <Button onClick={() => setClearDialogOpen(false)} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleClearAll} color="secondary" autoFocus>
+          <Button onClick={handleClearAll} color="secondary" style={{ color: '#ffffff', backgroundColor: '#dc3545' }}>
             Clear All
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Paper style={{ padding: 16, marginTop: 16 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <div>Subtotal: ${subtotal.toFixed(2)}</div>
+          </Grid>
+          <Grid item xs={6}>
+            <div>Total Checked Out: ${totalCheckedOut.toFixed(2)}</div>
+          </Grid>
+        </Grid>
+      </Paper>
     </Container>
   );
 };
