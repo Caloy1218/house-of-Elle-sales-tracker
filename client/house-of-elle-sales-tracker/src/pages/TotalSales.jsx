@@ -21,11 +21,12 @@ const TotalSales = () => {
     const fetchData = async () => {
       const querySnapshot = await getDocs(collection(db, 'totalSales'));
       const data = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-      setSalesData(data);
-      calculateTotalSales(data);
-      filterSalesDataByDate(data, selectedDate);
-      calculateTotalSelectedMonthSales(data, selectedDate);
-      calculateTotalSalesPerSeller(data);
+      const filteredData = data.filter(item => item.seller !== 'Unknown');
+      setSalesData(filteredData);
+      calculateTotalSales(filteredData);
+      filterSalesDataByDate(filteredData, selectedDate);
+      calculateTotalSelectedMonthSales(filteredData, selectedDate);
+      calculateTotalSalesPerSeller(filteredData);
     };
 
     fetchData();
@@ -68,7 +69,9 @@ const TotalSales = () => {
   const calculateTotalSalesPerSeller = (data) => {
     const salesBySeller = data.reduce((acc, item) => {
       const seller = item.seller || 'Unknown';
-      acc[seller] = (acc[seller] || 0) + parseFloat(item.price || 0);
+      if (seller !== 'Unknown') {
+        acc[seller] = (acc[seller] || 0) + parseFloat(item.price || 0);
+      }
       return acc;
     }, {});
     setTotalSalesPerSeller(salesBySeller);
