@@ -11,6 +11,7 @@ const Live = () => {
   const [totalCheckedOut, setTotalCheckedOut] = useState(0);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [sellerName, setSellerName] = useState('');
+  const [isTakeOverDisabled, setIsTakeOverDisabled] = useState(true); // State for button disabled
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,6 +23,11 @@ const Live = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Disable the "Take Over" button if sellerName is empty
+    setIsTakeOverDisabled(sellerName.trim() === '');
+  }, [sellerName]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -186,7 +192,7 @@ const Live = () => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={8}>
             <TextField
-              label="Your Name"
+              label="Seller Name"
               value={sellerName}
               onChange={(e) => setSellerName(e.target.value)}
               fullWidth
@@ -200,6 +206,7 @@ const Live = () => {
               fullWidth
               style={{ height: '100%' }}
               sx={{ backgroundColor: '#4caf50' }}
+              disabled={isTakeOverDisabled} // Disable button based on condition
             >
               Take Over
             </Button>
