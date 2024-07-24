@@ -118,10 +118,10 @@ const Live = () => {
   };
 
   const columns = [
+    { field: 'seller', headerName: 'Seller', width: 150 },
     { field: 'code', headerName: 'CODE', width: 150 },
     { field: 'minerName', headerName: 'Name of Miner', width: 200 },
     { field: 'price', headerName: 'Price', width: 150 },
-    { field: 'seller', headerName: 'Seller', width: 150 },
     {
       field: 'actions',
       headerName: 'Actions',

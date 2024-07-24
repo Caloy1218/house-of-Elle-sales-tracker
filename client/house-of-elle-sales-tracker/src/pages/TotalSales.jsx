@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { DataGrid } from '@mui/x-data-grid';
-import { Container, Paper, Typography, IconButton, TextField, Grid, Box } from '@mui/material';
+import { Container, Paper, Typography, IconButton, TextField, Grid, Box, Card, CardContent } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { useMediaQuery } from '@mui/material';
 
 const TotalSales = () => {
   const [salesData, setSalesData] = useState([]);
@@ -16,6 +17,8 @@ const TotalSales = () => {
   const [totalSelectedMonthSales, setTotalSelectedMonthSales] = useState(0);
   const [totalSalesPerSeller, setTotalSalesPerSeller] = useState({});
   const [selectedDate, setSelectedDate] = useState(dayjs().startOf('day'));
+
+  const isMobile = useMediaQuery('(max-width:600px)');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,12 +105,15 @@ const TotalSales = () => {
       type: 'actions',
       width: 100,
       getActions: (params) => [
-        <IconButton onClick={() => handleDelete(params.id)}>
+        <IconButton onClick={() => handleDelete(params.id)} key={params.id}>
           <DeleteIcon />
         </IconButton>,
       ],
     },
   ];
+
+  const selectedDateFormatted = selectedDate.format('MMMM D, YYYY');
+  const selectedMonthFormatted = selectedDate.format('MMMM');
 
   return (
     <Container>
@@ -129,19 +135,38 @@ const TotalSales = () => {
           </Grid>
         </Grid>
         <Box mt={2}>
-          <Typography variant="h6">Total Sales for Selected Date: ₱{totalSelectedDateSales.toFixed(2)}</Typography>
-          <Typography variant="h6">Total Sales for Selected Month: ₱{totalSelectedMonthSales.toFixed(2)}</Typography>
-          <Typography variant="h6">Total Sales Overall: ₱{totalSales.toFixed(2)}</Typography>
+          <Card>
+            <CardContent>
+              <Typography variant={isMobile ? "subtitle1" : "h6"}>Sales Overview</Typography>
+              <Box mt={2}>
+                <Typography variant={isMobile ? "body2" : "h6"}>
+                  Total Sales for {selectedDateFormatted}: ₱{totalSelectedDateSales.toFixed(2)}
+                </Typography>
+                <Typography variant={isMobile ? "body2" : "h6"}>
+                  Total Sales for {selectedMonthFormatted}: ₱{totalSelectedMonthSales.toFixed(2)}
+                </Typography>
+                <Typography variant={isMobile ? "body2" : "h6"}>
+                  Total Sales Overall: ₱{totalSales.toFixed(2)}
+                </Typography>
+              </Box>
+              <Box mt={2}>
+                <Typography variant={isMobile ? "subtitle2" : "h6"}>
+                  Total Sales per Seller:
+                </Typography>
+                {Object.entries(totalSalesPerSeller).map(([seller, total]) => (
+                  <Typography key={seller} variant={isMobile ? "body2" : "body1"}>
+                    Seller: {seller} - ₱{total.toFixed(2)}
+                  </Typography>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
         <Box mt={2}>
-          <Typography variant="h6">Total Sales per Seller:</Typography>
-          {Object.entries(totalSalesPerSeller).map(([seller, total]) => (
-            <Typography key={seller}>Seller: {seller} - ₱{total.toFixed(2)}</Typography>
-          ))}
+          <div style={{ height: 400, width: '100%' }}>
+            <DataGrid rows={filteredSalesData} columns={columns} pageSize={5} />
+          </div>
         </Box>
-        <div style={{ height: 400, width: '100%', marginTop: 16 }}>
-          <DataGrid rows={filteredSalesData} columns={columns} pageSize={5} />
-        </div>
       </Paper>
     </Container>
   );
