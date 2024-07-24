@@ -10,6 +10,7 @@ const Live = () => {
   const [rows, setRows] = useState([]);
   const [totalCheckedOut, setTotalCheckedOut] = useState(0);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [sellerName, setSellerName] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +30,7 @@ const Live = () => {
 
   const handleEnter = async () => {
     if (form.code && form.minerName && form.price) {
-      const newRow = { ...form, price: parseFloat(form.price), checkedOut: false };
+      const newRow = { ...form, price: parseFloat(form.price), checkedOut: false, seller: sellerName || 'Unknown' };
       await addDoc(collection(db, 'liveData'), newRow);
       setForm({ code: '', minerName: '', price: '' });
       const querySnapshot = await getDocs(collection(db, 'liveData'));
@@ -62,6 +63,7 @@ const Live = () => {
         code: row.code,
         minerName: row.minerName,
         price: row.price,
+        seller: row.seller,
         date: new Date(),
       });
 
@@ -94,10 +96,17 @@ const Live = () => {
     setTotalCheckedOut(total);
   };
 
+  const handleSellerTakeover = () => {
+    setRows((prevRows) =>
+      prevRows.map((row) => ({ ...row, seller: sellerName }))
+    );
+  };
+
   const columns = [
     { field: 'code', headerName: 'CODE', width: 150 },
     { field: 'minerName', headerName: 'Name of Miner', width: 200 },
     { field: 'price', headerName: 'Price', width: 150 },
+    { field: 'seller', headerName: 'Seller', width: 150 },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -173,6 +182,31 @@ const Live = () => {
         </Grid>
       </Paper>
 
+      <Paper style={{ padding: 16, marginTop: 16 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={8}>
+            <TextField
+              label="Your Name"
+              value={sellerName}
+              onChange={(e) => setSellerName(e.target.value)}
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={4}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSellerTakeover}
+              fullWidth
+              style={{ height: '100%' }}
+              sx={{ backgroundColor: '#4caf50' }}
+            >
+              Take Over
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+
       <div style={{ height: 400, width: '100%', marginTop: 16 }}>
         <DataGrid rows={rows} columns={columns} pageSize={5} />
       </div>
@@ -194,39 +228,26 @@ const Live = () => {
       <Paper style={{ padding: 16, marginTop: 16 }}>
         <Grid container justifyContent="space-between">
           <Grid item>
-            <strong>Subtotal:</strong>
+            <strong>Subtotal:</strong> ${subtotal.toFixed(2)}
           </Grid>
           <Grid item>
-            <strong>${subtotal.toFixed(2)}</strong>
+            <strong>Total Checked Out:</strong> ${totalCheckedOut.toFixed(2)}
           </Grid>
         </Grid>
-        {rows.length > 0 && (
-          <Grid container justifyContent="space-between">
-            <Grid item>
-              <strong>Total:</strong>
-            </Grid>
-            <Grid item>
-              <strong>${totalCheckedOut.toFixed(2)}</strong>
-            </Grid>
-          </Grid>
-        )}
       </Paper>
 
-      <Dialog
-        open={clearDialogOpen}
-        onClose={() => setClearDialogOpen(false)}
-      >
+      <Dialog open={clearDialogOpen} onClose={() => setClearDialogOpen(false)}>
         <DialogTitle>Confirm Clear All</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to clear all the data? This action cannot be undone.
+            Are you sure you want to clear all items? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setClearDialogOpen(false)} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleClearAll} color="secondary">
+          <Button onClick={handleClearAll} color="secondary" autoFocus>
             Clear All
           </Button>
         </DialogActions>
