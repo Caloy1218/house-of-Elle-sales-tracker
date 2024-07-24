@@ -14,6 +14,7 @@ const TotalSales = () => {
   const [totalSales, setTotalSales] = useState(0);
   const [totalSelectedDateSales, setTotalSelectedDateSales] = useState(0);
   const [totalSelectedMonthSales, setTotalSelectedMonthSales] = useState(0);
+  const [totalSalesPerSeller, setTotalSalesPerSeller] = useState({});
   const [selectedDate, setSelectedDate] = useState(dayjs().startOf('day'));
 
   useEffect(() => {
@@ -24,6 +25,7 @@ const TotalSales = () => {
       calculateTotalSales(data);
       filterSalesDataByDate(data, selectedDate);
       calculateTotalSelectedMonthSales(data, selectedDate);
+      calculateTotalSalesPerSeller(data);
     };
 
     fetchData();
@@ -43,6 +45,7 @@ const TotalSales = () => {
     });
     setFilteredSalesData(filteredData);
     calculateTotalSelectedDateSales(filteredData);
+    calculateTotalSalesPerSeller(filteredData);
   };
 
   const calculateTotalSelectedDateSales = (data) => {
@@ -62,6 +65,15 @@ const TotalSales = () => {
     setTotalSelectedMonthSales(totalMonthSales);
   };
 
+  const calculateTotalSalesPerSeller = (data) => {
+    const salesBySeller = data.reduce((acc, item) => {
+      const seller = item.seller || 'Unknown';
+      acc[seller] = (acc[seller] || 0) + parseFloat(item.price || 0);
+      return acc;
+    }, {});
+    setTotalSalesPerSeller(salesBySeller);
+  };
+
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
@@ -73,12 +85,14 @@ const TotalSales = () => {
     filterSalesDataByDate(updatedSalesData, selectedDate);
     calculateTotalSales(updatedSalesData);
     calculateTotalSelectedMonthSales(updatedSalesData, selectedDate);
+    calculateTotalSalesPerSeller(updatedSalesData);
   };
 
   const columns = [
     { field: 'code', headerName: 'CODE', width: 150 },
     { field: 'minerName', headerName: 'Name of Miner', width: 200 },
     { field: 'price', headerName: 'Price', width: 150 },
+    { field: 'seller', headerName: 'Seller', width: 200 },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -115,6 +129,12 @@ const TotalSales = () => {
           <Typography variant="h6">Total Sales for Selected Date: ₱{totalSelectedDateSales.toFixed(2)}</Typography>
           <Typography variant="h6">Total Sales for Selected Month: ₱{totalSelectedMonthSales.toFixed(2)}</Typography>
           <Typography variant="h6">Total Sales Overall: ₱{totalSales.toFixed(2)}</Typography>
+        </Box>
+        <Box mt={2}>
+          <Typography variant="h6">Total Sales per Seller:</Typography>
+          {Object.entries(totalSalesPerSeller).map(([seller, total]) => (
+            <Typography key={seller}>Seller: {seller} - ₱{total.toFixed(2)}</Typography>
+          ))}
         </Box>
         <div style={{ height: 400, width: '100%', marginTop: 16 }}>
           <DataGrid rows={filteredSalesData} columns={columns} pageSize={5} />
